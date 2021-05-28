@@ -9,7 +9,8 @@
 #' @param x An object of class \code{"ivreg"} or \code{"summary.ivreg"}.
 #' @param component For \code{\link{terms}}, \code{"regressors"}, \code{"instruments"}, or \code{"full"}; 
 #' for \code{\link{model.matrix}}, \code{"projected"}, \code{"regressors"}, or \code{"instruments"};
-#' for \code{\link{formula}}, \code{"regressors"}, \code{"instruments"},  or \code{"complete"}.
+#' for \code{\link{formula}}, \code{"regressors"}, \code{"instruments"},  or \code{"complete"};
+#' for \code{\link{coef}} and \code{\link{vcov}}, \code{"stage2"} or \code{"stage1"}.
 #' @param newdata Values of predictors for which to obtain predicted values.
 #' @param na.action \code{na} method to apply to predictor values for predictions; default is \code{\link{na.pass}}.
 #' @param digits For printing.
@@ -27,17 +28,97 @@
 #' for \code{\link{linearHypothesis}} for details.
 #' @param formula. To update model.
 #' @param evaluate If \code{TRUE}, the default, the updated model is evaluated; if \code{FALSE} the updated call is returned.
+#' @param complete If \code{TRUE}, the default, the returned coefficient vector (for \code{coef()}) or coefficient-coevariance matrix (for \code{vcov}) includes elements for aliased regressors.
+#' @param parm  parameters for which confidence intervals are to be computed; a vector or numbers or names; the defaiult is all parameters.
+#' @param level confidence level; the default is \code{0.95}.
 #' @param ... arguments to pass down.
 #'
-#' @importFrom stats model.matrix vcov terms predict update anova quantile weighted.mean delete.response lm lm.fit lm.wfit model.offset na.pass pchisq 
+#' @importFrom stats model.matrix vcov .vcov.aliased terms predict update anova quantile weighted.mean delete.response lm lm.fit lm.wfit model.offset na.pass pchisq 
 #' @importFrom lmtest coeftest waldtest waldtest.default lrtest lrtest.default
 #' @importFrom car linearHypothesis
 #' @import Formula
 
 #' @rdname ivregMethods
 #' @export
-vcov.ivreg <- function(object, ...)
-  object$sigma^2 * object$cov.unscaled
+coef.ivreg <- function(object, component = c("stage2", "stage1"), complete = TRUE, ...) {
+  component <- match.arg(component, c("stage2", "stage1"))
+  ## default: stage 2
+  if(component == "stage2") {
+    cf <- object$coefficients
+  } else if(length(object$endogenous) <= 1L) {
+  ## otherwise: stage 1 with single endogenous variable
+    cf <- object$coefficients1[, object$endogenous]
+  } else {
+  ## or: stage 1 with multiple endogenous variables
+    cf <- object$coefficients1[, object$endogenous, drop = FALSE]
+    cf <- structure(as.vector(cf), .Names = as.vector(t(outer(colnames(cf), rownames(cf), paste, sep = ":"))))
+  }
+  if (!complete) cf <- cf[!is.na(cf)]
+  return(cf)
+}
+
+#' @rdname ivregMethods
+#' @export
+vcov.ivreg <- function(object, component = c("stage2", "stage1"), complete = TRUE, ...) {
+  component <- match.arg(component, c("stage2", "stage1"))
+  ## default: stage 2
+  if(component == "stage2") {
+    vc <- object$sigma^2 * object$cov.unscaled
+    ok <- !is.na(object$coefficients)
+  } else {
+  ## otherwise: stage 1
+    cf <- object$coefficients1
+    if(is.null(cf)) return(NULL)
+    ok <- apply(!is.na(cf), 1L, all)
+    ucov <- chol2inv(object$qr1$qr[1L:sum(ok), 1L:sum(ok), drop = FALSE])
+    rownames(ucov) <- colnames(ucov) <- colnames(object$qr1$qr)[1L:sum(ok)]
+    endo <- object$endogenous
+    if(length(endo) == 1L) {
+      vc <- sum(object$residuals1[, endo]^2)/object$df.residual1 * ucov
+    } else {
+      sigma2 <- structure(
+        crossprod(object$residuals1[, endo])/object$df.residual1,
+        .Dimnames = rep.int(list(colnames(object$residuals1)[endo]), 2L)
+      )
+      vc <- kronecker(sigma2, ucov, make.dimnames = TRUE)
+      ok <- structure(
+        rep.int(ok, length(endo)),
+        .Names = as.vector(t(outer(colnames(cf)[endo], rownames(cf), paste, sep = ":"))))
+    }
+  }
+  vc <- .vcov.aliased(!ok, vc, complete = complete)
+  return(vc)
+}
+
+#' @rdname ivregMethods
+#' @importFrom stats qnorm qt
+#' @export
+confint.ivreg <- function (object, parm, level = 0.95,
+  component = c("stage2", "stage1"), complete = TRUE, vcov. = NULL, df = NULL, ...) 
+{
+  component <- match.arg(component, c("stage2", "stage1"))
+  est <- coef(object, component = component, complete = complete)
+  se <- if(is.null(vcov.)) {
+    vcov(object, component = component, complete = complete)
+  } else {
+    if(is.function(vcov.)) {
+      vcov.(object, ...)
+    } else {
+      vcov.
+    }
+  }
+  se <- sqrt(diag(se))
+  a <- (1 - level)/2
+  a <- c(a, 1 - a)
+  if(is.null(df)) df <- if(component == "stage2") object$df.residual else object$df.residual1
+  crit <- if(is.finite(df) && df > 0) qt(a, df = df) else qnorm(a)
+  ci <- cbind(est + crit[1L] * se, est + crit[2L] * se)
+  colnames(ci) <- paste(format(100 * a, trim = TRUE, scientific = FALSE, digits = 3L), "%")
+  if(missing(parm) || is.null(parm)) parm <- seq_along(est)
+  if(is.character(parm)) parm <- which(names(est) %in% parm)
+  ci <- ci[parm, , drop = FALSE]
+  ci
+}
 
 #' @rdname ivregMethods
 #' @exportS3Method sandwich::bread ivreg
@@ -121,7 +202,9 @@ model.matrix.ivreg_projected <- function(object, ...) model.matrix.ivreg(object,
 #' for \code{residuals}, one of \code{"response"} (the default), \code{"projected"}, \code{"regressors"},
 #' \code{"working"}, \code{"deviance"}, \code{"pearson"}, or \code{"partial"}; 
 #' \code{type = "working"} and \code{"response"} are equivalent, as are 
-#' \code{type = "deviance"} and \code{"pearson"}.
+#' \code{type = "deviance"} and \code{"pearson"}; for \code{weights}, \code{"variance"} (the default)
+#' for invariance-variance weights (which is \code{NULL} for an unweighted fit) 
+#' or \code{"robustness"} for robustness weights (available for M or MM estimation).
 #' 
 #' @importFrom stats fitted
 #' @export
@@ -323,18 +406,9 @@ ivdiag <- function(obj, vcov. = NULL) {
   xnam <- colnames(x)
   znam <- colnames(z)
 
-  ## relabel "instruments" to match order from "regressors"
-  fx <- attr(terms(obj, component = "regressors"), "factors")
-  fz <- attr(terms(obj, component = "instruments"), "factors")  
-  fz <- fz[c(rownames(fx)[rownames(fx) %in% rownames(fz)], rownames(fz)[!(rownames(fz) %in% rownames(fx))]), , drop = FALSE]
-  nz <- apply(fz > 0, 2, function(x) paste(rownames(fz)[x], collapse = ":"))
-  nz <- nz[names(nz) != nz]
-  nz <- nz[nz %in% colnames(fx)]
-  if(length(nz) > 0L) znam[names(nz)] <- nz
-
   ## endogenous/instrument variables
-  endo <- which(!(xnam %in% znam))
-  inst <- which(!(znam %in% xnam))
+  endo <- obj$endogenous
+  inst <- obj$instruments
   if((length(endo) <= 0L) | (length(inst) <= 0L))
     stop("no endogenous/instrument variables")
 
@@ -429,7 +503,7 @@ ivdiag <- function(obj, vcov. = NULL) {
 #' @importFrom stats residuals
 #' @export
 residuals.ivreg <- function(object, type=c("response", "projected", "regressors", "working",
-                                            "deviance", "pearson", "partial"), ...){
+                                            "deviance", "pearson", "partial", "stage1"), ...){
   type <- match.arg(type)
   w <- weights(object)
   if (is.null(w)) w <- 1
@@ -440,7 +514,8 @@ residuals.ivreg <- function(object, type=c("response", "projected", "regressors"
                 pearson  = sqrt(w)*object$residuals,
                 projected   = object$residuals1,
                 regressors  = object$residuals2,
-                partial  = object$residuals + predict(object, type = "terms"))
+                partial  = object$residuals + predict(object, type = "terms"),
+		stage1 = object$residuals1[, object$endogenous, drop = FALSE])
   naresid(object$na.action, res)
 }
 
@@ -501,4 +576,11 @@ alias.ivreg <- function(object, ...){
 qr.ivreg <- function(x, ...){
     .Class <- "lm"
     NextMethod()
+}
+
+#' @rdname ivregMethods
+#' @export
+weights.ivreg <- function(object, type=c("variance", "robustness"), ...){
+  type <- match.arg(type, c("variance", "robustness"))
+  if (type == "variance") object$weights else object$rweights
 }

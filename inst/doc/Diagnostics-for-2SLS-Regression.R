@@ -7,11 +7,11 @@ data("Kmenta", package = "ivreg")
 Kmenta
 
 ## -----------------------------------------------------------------------------
-deq <- ivreg(Q ~ P + D, ~ D + F + A, data=Kmenta)     # demand equation
+deq <- ivreg(Q ~ P + D | D + F + A, data=Kmenta)     # demand equation
 summary(deq)
 
 ## -----------------------------------------------------------------------------
-seq <- ivreg(Q ~ P + F + A, ~ D + F + A, data=Kmenta) # supply equation
+seq <- ivreg(Q ~ P + F + A | D + F + A, data=Kmenta) # supply equation
 summary(seq)
 
 ## ----fig.height=8, fig.width=8------------------------------------------------
@@ -89,8 +89,8 @@ abline(h=0)
 spreadLevelPlot(deq, smooth=list(span=1))
 
 ## -----------------------------------------------------------------------------
-with(Kmenta, plot(Q, Q^2.5))
-abline(lm(Q^2.5 ~ Q, data=Kmenta))
+with(Kmenta, plot(Q, Q^-2.5))
+abline(lm(Q^-2.5 ~ Q, data=Kmenta))
 
 ## -----------------------------------------------------------------------------
 ncvTest(deq)
@@ -164,4 +164,15 @@ sqrt(vif(deq))
 
 ## ----fig.height=4, fig.width=8------------------------------------------------
 mcPlots(deq)
+
+## -----------------------------------------------------------------------------
+deq.mm <- update(deq1, method = "MM")
+summary(deq.mm)
+compareCoefs(deq, deq1, deq1.20, deq.mm)
+
+## -----------------------------------------------------------------------------
+weights(deq.mm, type = "robustness")
+
+## -----------------------------------------------------------------------------
+influencePlot(deq.mm)
 

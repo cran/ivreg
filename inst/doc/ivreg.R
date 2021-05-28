@@ -21,8 +21,19 @@ library("ivreg")
 m_iv <- ivreg(log(wage) ~ education + poly(experience, 2) + ethnicity + smsa + south |
   nearcollege + poly(age, 2) + ethnicity + smsa + south,
   data = SchoolingReturns)
+
+## ----ivreg-alternative, eval=FALSE--------------------------------------------
+#  m_iv <- ivreg(log(wage) ~ ethnicity + smsa + south | education + poly(experience, 2) |
+#    nearcollege + poly(age, 2), data = SchoolingReturns)
+
+## ----ivreg-summary------------------------------------------------------------
 summary(m_iv)
 
-## ----compareCoefs-------------------------------------------------------------
-car::compareCoefs(m_ols, m_iv)
+## ----modelsummary-------------------------------------------------------------
+library("modelsummary")
+m_list <- list(OLS = m_ols, IV = m_iv)
+msummary(m_list)
+
+## ----modelplot, fig.height=5, fig.width = 7-----------------------------------
+modelplot(m_list, coef_omit = "Intercept|experience")
 
