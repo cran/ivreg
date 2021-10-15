@@ -161,12 +161,12 @@ vcovHC.ivreg <- function (x, ...) {
 #' @rdname ivregMethods
 #' @export
 terms.ivreg <- function(x, component = c("regressors", "instruments", "full"), ...)
-  x$terms[[match.arg(component)]]
+  x$terms[[match.arg(component, c("regressors", "instruments", "full"))]]
 
 #' @rdname ivregMethods
 #' @export
 model.matrix.ivreg <- function(object, component = c("regressors", "projected", "instruments"), ...) {
-  component <- match.arg(component)
+  component <- match.arg(component, c("regressors", "projected", "instruments"))
   if(!is.null(object$x)) rval <- object$x[[component]]
     else if(!is.null(object$model)) {
       X <- model.matrix(object$terms$regressors, object$model, contrasts = object$contrasts$regressors)
@@ -210,7 +210,7 @@ model.matrix.ivreg_projected <- function(object, ...) model.matrix.ivreg(object,
 #' @export
 predict.ivreg <- function(object, newdata, type = c("response", "terms"), na.action = na.pass,  ...)
 {
-  type <- match.arg(type)
+  type <- match.arg(type, c("response", "terms"))
   if (type == "response"){
     if(missing(newdata)) fitted(object)
     else {
@@ -240,11 +240,14 @@ print.ivreg <- function(x, digits = max(3, getOption("digits") - 3), ...)
 
 #' @rdname ivregMethods
 #' @export
-summary.ivreg <- function(object, vcov. = NULL, df = NULL, diagnostics = TRUE, ...)
+summary.ivreg <- function(object, vcov. = NULL, df = NULL, diagnostics = NULL, ...)
 {
-
-  if (length(formula(object, component="instruments")) == 0) diagnostics <- FALSE 
-      # prevent some "inherited" "lm" methods from failing
+  # prevent some "inherited" "lm" methods from failing
+  if(is.null(diagnostics)) diagnostics <- (length(object$endogenous) > 0L) && (length(object$instruments) > 0L)
+  if(diagnostics && ((length(object$endogenous) <= 0L) || (length(object$instruments) <= 0L) || (length(formula(object, component="instruments")) <= 0L))) {
+    diagnostics <- FALSE
+    warning("diagnostics cannot be computed without endogenous/instrument variables")
+  }
   
   ## weighted residuals
   res <- object$residuals
@@ -504,7 +507,7 @@ ivdiag <- function(obj, vcov. = NULL) {
 #' @export
 residuals.ivreg <- function(object, type=c("response", "projected", "regressors", "working",
                                             "deviance", "pearson", "partial", "stage1"), ...){
-  type <- match.arg(type)
+  type <- match.arg(type, c("response", "projected", "regressors", "working", "deviance", "pearson", "partial", "stage1"))
   w <- weights(object)
   if (is.null(w)) w <- 1
   res <- switch(type,
@@ -531,7 +534,7 @@ Effect.ivreg <- function (focal.predictors, mod, ...) {
 #' @importFrom stats formula
 #' @export
 formula.ivreg <- function(x, component = c("complete", "regressors", "instruments"), ... ) {
-  component <- match.arg(component)
+  component <- match.arg(component, c("complete", "regressors", "instruments"))
   if (component == "complete"){
     class(x) <- "default"
     formula(x)
@@ -551,7 +554,7 @@ find_formula.ivreg <- function(x, ...) {
 #' @importFrom car Anova
 #' @export
 Anova.ivreg <- function(mod, test.statistic=c("F", "Chisq"), ...){
-  test.statistic <- match.arg(test.statistic)
+  test.statistic <- match.arg(test.statistic, c("F", "Chisq"))
   NextMethod(test.statistic=test.statistic)
 }
 
@@ -559,7 +562,7 @@ Anova.ivreg <- function(mod, test.statistic=c("F", "Chisq"), ...){
 #' @export
 linearHypothesis.ivreg <- function(model, hypothesis.matrix, rhs=NULL, 
                                    test=c("F", "Chisq"), ...){
-  test <- match.arg(test)
+  test <- match.arg(test, c("F", "Chisq"))
   NextMethod(test=test)
 }
 
