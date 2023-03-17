@@ -1,3 +1,14 @@
+# To process this file correctly with roxygen2 so that S3 methods that are registered conditionally 
+# generate proper usage lines in the .Rd file as  \method{...}{...} markup:
+#     
+# library("sandwich")
+# library("insight")
+# library("effects")
+# devtools::document() 
+# 
+# Then build the source package.
+
+
 #' Methods for \code{"ivreg"} Objects
 #' @aliases ivregMethods vcov.ivreg bread.ivreg estfun.ivreg terms.ivreg model.matrix.ivreg predict.ivreg
 #' print.ivreg summary.ivreg print.summary.ivreg anova.ivreg update.ivreg residuals.ivreg Effect.ivreg 
@@ -28,8 +39,8 @@
 #' for \code{\link{linearHypothesis}} for details.
 #' @param formula. To update model.
 #' @param evaluate If \code{TRUE}, the default, the updated model is evaluated; if \code{FALSE} the updated call is returned.
-#' @param complete If \code{TRUE}, the default, the returned coefficient vector (for \code{coef()}) or coefficient-coevariance matrix (for \code{vcov}) includes elements for aliased regressors.
-#' @param parm  parameters for which confidence intervals are to be computed; a vector or numbers or names; the defaiult is all parameters.
+#' @param complete If \code{TRUE}, the default, the returned coefficient vector (for \code{coef()}) or coefficient-covariance matrix (for \code{vcov}) includes elements for aliased regressors.
+#' @param parm  parameters for which confidence intervals are to be computed; a vector or numbers or names; the default is all parameters.
 #' @param level confidence level; the default is \code{0.95}.
 #' @param ... arguments to pass down.
 #'
@@ -169,9 +180,9 @@ model.matrix.ivreg <- function(object, component = c("regressors", "projected", 
   component <- match.arg(component, c("regressors", "projected", "instruments"))
   if(!is.null(object$x)) rval <- object$x[[component]]
     else if(!is.null(object$model)) {
-      X <- model.matrix(object$terms$regressors, object$model, contrasts = object$contrasts$regressors)
+      X <- model.matrix(object$terms$regressors, object$model, contrasts.arg = object$contrasts$regressors)
       Z <- if(is.null(object$terms$instruments)) NULL
-        else model.matrix(object$terms$instruments, object$model, contrasts = object$contrasts$instruments)
+        else model.matrix(object$terms$instruments, object$model, contrasts.arg = object$contrasts$instruments)
       w <- weights(object)
       XZ <- if(is.null(Z)) {
         X
@@ -217,7 +228,7 @@ predict.ivreg <- function(object, newdata, type = c("response", "terms"), na.act
       mf <- model.frame(delete.response(object$terms$full), newdata,
                         na.action = na.action, xlev = object$levels)
       X <- model.matrix(delete.response(object$terms$regressors), mf,
-                        contrasts = object$contrasts$regressors)
+                        contrasts.arg = object$contrasts$regressors)
       ok <- !is.na(object$coefficients)
       drop(X[, ok, drop = FALSE] %*% object$coefficients[ok])
     } 

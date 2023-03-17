@@ -119,11 +119,11 @@ for \code{\link{model.matrix}}, \code{"projected"}, \code{"regressors"}, or \cod
 for \code{\link{formula}}, \code{"regressors"}, \code{"instruments"},  or \code{"complete"};
 for \code{\link{coef}} and \code{\link{vcov}}, \code{"stage2"} or \code{"stage1"}.}
 
-\item{complete}{If \code{TRUE}, the default, the returned coefficient vector (for \code{coef()}) or coefficient-coevariance matrix (for \code{vcov}) includes elements for aliased regressors.}
+\item{complete}{If \code{TRUE}, the default, the returned coefficient vector (for \code{coef()}) or coefficient-covariance matrix (for \code{vcov}) includes elements for aliased regressors.}
 
 \item{...}{arguments to pass down.}
 
-\item{parm}{parameters for which confidence intervals are to be computed; a vector or numbers or names; the defaiult is all parameters.}
+\item{parm}{parameters for which confidence intervals are to be computed; a vector or numbers or names; the default is all parameters.}
 
 \item{level}{confidence level; the default is \code{0.95}.}
 

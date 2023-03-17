@@ -5,7 +5,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.height=4, fig.width=4)
 #  install.packages("ivreg", dependencies = TRUE)
 
 ## ----installation-rforge, eval=FALSE------------------------------------------
-#  remotes::install_github("https://github.com/john-d-fox/ivreg/")
+#  remotes::install_github("https://github.com/zeileis/ivreg/")
 
 ## ----data---------------------------------------------------------------------
 data("SchoolingReturns", package = "ivreg")

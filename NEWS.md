@@ -1,3 +1,16 @@
+# Version 0.6-2
+
+* Achim Zeileis took over maintenance, both on CRAN and on GitHub. The GitHub
+  source repository is now at <https://github.com/zeileis/ivreg/> with the web
+  page at <https://zeileis.github.io/ivreg/>.
+
+* Avoid partial argument matches by calling `model.matrix(..., contrasts.arg = ...)`
+  rather than just `contrasts` (reported by Kevin Tappe).
+  
+* Make names of arguments of `influencePlot.ivreg()` and `outlierTest.ivreg()`
+  consistent with the corresponding generic functions from the car package.
+
+
 # Version 0.6-1
 
 * `method` is now an explicit argument to `ivreg()` and not just passed through `...`
@@ -81,4 +94,4 @@
   plots; and effect plots with partial residuals.
   
 * An overview of the package, documentation, examples, and vignettes are provided
-  at <https://john-d-fox.github.io/ivreg/>.
+  at `https://john-d-fox.github.io/ivreg/`.
