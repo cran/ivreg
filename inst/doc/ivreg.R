@@ -29,7 +29,7 @@ m_iv <- ivreg(log(wage) ~ education + poly(experience, 2) + ethnicity + smsa + s
 ## ----ivreg-summary------------------------------------------------------------
 summary(m_iv)
 
-## ----modelsummary-------------------------------------------------------------
+## ----modelsummary, message=FALSE----------------------------------------------
 library("modelsummary")
 m_list <- list(OLS = m_ols, IV = m_iv)
 msummary(m_list)

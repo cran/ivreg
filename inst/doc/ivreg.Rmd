@@ -1,7 +1,7 @@
 ---
 title: "ivreg: Two-Stage Least-Squares Regression with Diagnostics"
 author: "John Fox, Christian Kleiber, Achim Zeileis"
-date: "last modified: 2020-08-04"
+date: "last modified: 2024-04-20"
 output:
   rmarkdown::html_vignette:
     highlight: monochrome
@@ -60,7 +60,7 @@ install.packages("ivreg", dependencies = TRUE)
 ```
 
 The development version of **ivreg** is hosted on GitHub at <https://github.com/zeileis/ivreg/>.
-It can be conveniently installed installed via the `install_github()` function in the
+It can be conveniently installed via the `install_github()` function in the
 [**remotes**](https://CRAN.R-project.org/package=remotes) package:
 
 ```{r installation-rforge, eval=FALSE}
@@ -161,7 +161,7 @@ out more clearly when showing coefficients and standard errors side by side, e.g
 `compareCoefs()` function from the **car** package or the `msummary()` function from the
 [**modelsummary**](https://CRAN.R-project.org/package=modelsummary) package:
 
-```{r modelsummary}
+```{r modelsummary, message=FALSE}
 library("modelsummary")
 m_list <- list(OLS = m_ols, IV = m_iv)
 msummary(m_list)
