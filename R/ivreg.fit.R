@@ -3,7 +3,7 @@
 #' Fit instrumental-variable regression by two-stage least squares (2SLS). This is
 #' equivalent to direct instrumental-variables estimation when the number of
 #' instruments is equal to the number of predictors. Alternative robust-regression
-#' estimation is also supported, based on M-estimation (22M) or MM-estimation (2SMM).
+#' estimation is also supported, based on M-estimation (2SM) or MM-estimation (2SMM).
 #' 
 #' \code{\link{ivreg}} is the high-level interface to the work-horse function
 #' \code{ivreg.fit}. \code{ivreg.fit} is essentially a convenience interface to
@@ -15,7 +15,7 @@
 #' @aliases ivreg.fit
 #' 
 #' @importFrom MASS rlm
-#' @importFrom stats mad
+#' @importFrom stats mad setNames
 #' 
 #' @param x regressor matrix.
 #' @param y vector for the response variable.
@@ -113,6 +113,7 @@ ivreg.fit <- function(x, y, z, weights, offset, method = c("OLS", "M", "MM"),
   if(!is.null(z)) {
     if(ncol(z) < ncol(x)) warning("more regressors than instruments")
     auxreg <- if(is.null(weights)) lm.fit(z, x, ...) else lm.wfit(z, x, weights, ...)
+    if (anyNA(auxreg$coefficients)) warning("some instrumental variables are collinear")
     xz <- as.matrix(auxreg$fitted.values)
     # pz <- z %*% chol2inv(auxreg$qr$qr) %*% t(z)
     colnames(xz) <- colnames(x)
@@ -122,43 +123,55 @@ ivreg.fit <- function(x, y, z, weights, offset, method = c("OLS", "M", "MM"),
   }
   
   if (method == "OLS"){
-    hats <- if (!is.null(auxreg)) cbind(lm.influence(auxreg, do.coef = FALSE)$hat, 0)
-    else cbind(NA, matrix(0, nrow=n, ncol=1))
+    hats <- if (!is.null(auxreg)) {
+      cbind(lm.influence(auxreg, do.coef = FALSE)$hat, 0)
+    } else {
+      cbind(NA, matrix(0, nrow = n, ncol = 1L))
+    }
   }
   
   ## infer endogenous variables in x and instruments in z
-  
+  rowAbsMaxs <- function(x, ...) apply(abs(as.matrix(x)), 1L, max, ...)
+  colAbsMaxs <- function(x, ...) apply(abs(as.matrix(x)), 2L, max, ...)
   exog <- structure(seq_along(colnames(x)), .Names = colnames(x))
   if(!is.null(auxreg)) {
-    endo <- which(colMeans(as.matrix(auxreg$residuals^2)) > sqrt(.Machine$double.eps))
-    inst <- rowMeans(as.matrix(coef(auxreg)^2)[, -endo, drop = FALSE])
+    endo <- which(colAbsMaxs(auxreg$residuals) > sqrt(.Machine$double.eps))
+    inst <- coef(auxreg)
+    if(length(endo) > 0L) inst <- inst[, -endo, drop = FALSE]
+    inst <- rowAbsMaxs(inst)
     inst <- which(inst < sqrt(.Machine$double.eps) | is.nan(inst))
     endo <- exog[endo]
-    exog <- exog[-endo]
+    if(length(endo) > 0L) {
+      exog <- exog[-endo]
+    } else {
+      warning("no endogenous variables detected, all regressors appear to be exogenous")
+    }
   } else {
-    endo <- inst <- integer()
+    endo <- inst <- setNames(integer(), character())
   }
   
   # robust regression for stage 1
-  if (method != "OLS" && length(endo) > 0){
+  if (method != "OLS"){
     rlm.args$x <- z
     rlm.args$method <- method
     if (!is.null(weights)) rlm.args$weights <- weights
     residuals <- matrix(0, n, p)
     hats <- rwts <- matrix(0, n, length(endo) + 1)
-    coef <- coef(auxreg)
-    j <- 0
-    for (en in endo){
-      j <- j + 1
-      rlm.args$y <- x[, en]
-      xz[, en] <- fitted(st1 <- do.call(rlm, rlm.args))
-      residuals[ , en] <- residuals(st1)
-      coef[, en] <- coef(st1)
-      rwts[, j] <- st1$w
-      hats[, j] <- hatvalues(st1)
-    } 
-    auxreg$residuals <- residuals
-    auxreg$coefficients <- coef
+    if(!is.null(auxreg)) {
+      coef <- coef(auxreg)
+      j <- 0
+      for (en in endo){
+        j <- j + 1
+        rlm.args$y <- x[, en]
+        xz[, en] <- fitted(st1 <- do.call(rlm, rlm.args))
+        residuals[ , en] <- residuals(st1)
+        coef[, en] <- coef(st1)
+        rwts[, j] <- st1$w
+        hats[, j] <- hatvalues(st1)
+      } 
+      auxreg$residuals <- residuals
+      auxreg$coefficients <- coef
+    }
   }
   
   ## main regression
@@ -178,7 +191,7 @@ ivreg.fit <- function(x, y, z, weights, offset, method = c("OLS", "M", "MM"),
     colnames(hats) <- colnames(rwts) <- c(names(endo), "stage_2")
     fit$df.residual <- n - length(na.omit(coef(fit)))
   } else {
-    hats[, 2] <- lm.influence(fit, do.coef = FALSE)$hat
+    hats[, 2L] <- lm.influence(fit, do.coef = FALSE)$hat
     colnames(hats) <- c("stage_1", "stage_2")
   }
   

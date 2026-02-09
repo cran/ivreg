@@ -86,7 +86,7 @@ diagprod <- function(d, X){
 #' independent.
 #'
 #' For additional information, see the vignette
-#' \href{../doc/Diagnostics-for-2SLS-Regression.pdf}{Diagnostics for 2SLS Regression}.
+#' \href{../doc/Diagnostics-for-2SLS-Regression.html}{Diagnostics for 2SLS Regression}.
 #' @importFrom stats influence
 #' @export
 #' @seealso \code{\link{ivreg}}, \code{\link[car]{avPlots}},
@@ -588,6 +588,7 @@ influence.rivreg <- function(model, ...){
   infl
 }
 
+#' @keywords internal
 hatvalues.rlm <- function(model, ...){
   # this unexported method is necessary because
   # the inherited lm method doesn't take

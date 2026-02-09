@@ -1,3 +1,32 @@
+# Version 0.6-6
+
+* A warning is issued now in `ivreg.fit()` if there are any collinear instruments.
+
+* If a model is specified where the instruments perfectly predict all regressors,
+  a warning is now issued that no endogenous variables could be detected and that
+  all regressors appear to be exogenous (reported by Alex Hayes in #23).
+  
+* Additionally, the documentation clarifies that fitting a model with only
+  a single right-hand side (i.e., treating all regressors as exogenous)
+  is possible for convenience, e.g., to facilitate model comparisons. This
+  now also works correctly for M and MM estimation.
+
+* The numeric checks of which variables are exogenous/endogenous/instruments
+  have been improved and are a little more rigorous now.
+
+* The `summary()` method now also works correctly if there are aliased
+  coefficients that are `NA` (reported by Alex Hayes in #24).
+
+* An error is issued now if `vcovHC(..., component = "stage1")` is requested
+  because currently only `"stage2"` (the default) is supported (reported in #26
+  by Matthew Bhagat-Conway).
+
+* Now `weights(..., type = "working")` also works for `ivreg` objects. These
+  are simply the weights already available previously as
+  `weights(..., type = "variance")` as these are now used in computations of
+  `lm.influence()`, e.g., `dffits()`.
+
+
 # Version 0.6-5
 
 * Better documentation for summary and inference methods for `ivreg()` objects
