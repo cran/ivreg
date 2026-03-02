@@ -1,12 +1,12 @@
-0400c12843c51684471c46baf214e1b1 *DESCRIPTION
-57340d393cb7bb88d791f281d5fede85 *NAMESPACE
-cc0ce5a892c6c651ef88936fd3f48736 *NEWS.md
+63da74b81a7d398ed02bbe5082cff7bc *DESCRIPTION
+5007dc750415a8dc9d9d9a16515a318c *NAMESPACE
+0f79ff910493609a9fe8e2c57a9ac49b *NEWS.md
 b39cc27ca22315dde1de2fe59c6ccf94 *R/CigaretteDemand.R
 f8b03b6943382fa8a6fcff985de96a58 *R/Kmenta.R
 ad88bb34d492480da824ddc1261e16a2 *R/SchoolingReturns.R
 72bc04a8a4577397cf18176e089d08dc *R/ivreg.R
 c79702bf277881a0c7fba7373877b141 *R/ivreg.fit.R
-e22d559650eb35b1ddf92bd03a207e39 *R/ivregDiagnostics.R
+c938eb44ae539dbdb9280413ae83a532 *R/ivregDiagnostics.R
 c042269179e1401b3b00f94c96f47d22 *R/ivregMethods.R
 36bf67c6618c50c6f8ac373c8f536b00 *R/summary.ivreg.R
 76773003e1c2e8e14f024fdbabd40af3 *README.md
@@ -34,7 +34,7 @@ a3bc021fa709fd3be963adecefaae2e9 *man/ivregDiagnostics.Rd
 52daae79216fe614ca78c9ae0398eeee *man/summary.ivreg.Rd
 d121cd708ba88960a9ea9212aeed129d *tests/testthat.R
 859943f9846988918979e79bbb08c15b *tests/testthat/test-alias.R
-81418b17f2d99b20aa78855d84c170f4 *tests/testthat/test-case-deletion.R
+ec1dc32d0c2fd0414729dfacc64584ee *tests/testthat/test-case-deletion.R
 16c697e902f6ae98b8e800bfa3e6b733 *tests/testthat/test-ivreg.R
 de5994d491b9d2da03b4e4ef9ec0fca7 *tests/testthat/test-ivreg.fit.R
 617184926443d245c4ac35f5835be2e3 *tests/testthat/test-predict.R
